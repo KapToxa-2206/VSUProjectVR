@@ -9,7 +9,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Main_Scene.unity
     guid: 42e2ee23b0cc6da4a8cdd57519e03079
   - enabled: 1
-    path: Assets/Scenes/Showroom.unity
+    path: Assets/Scenes/ShowroomScene.unity
     guid: 75ba119efabb7de4ca8b326379b1cebe
   - enabled: 1
     path: Assets/Scenes/Cinema_Scene.unity
