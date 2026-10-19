@@ -22,26 +22,26 @@ MonoBehaviour:
   - Liver
   - Bladder
   - MyNothing
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Organs
+  - Bones
+  - RClavicle
+  - RScapula
+  - RHumerus
+  - RForeArm
+  - RHand
+  - LowerJaw
+  - UpperJow
+  - LClavicle
+  - LScapula
+  - LHumerus
+  - LForeArm
+  - LHand
+  - Neck
+  - Chest
+  - Spine
+  - Hip
+  - RTibia
+  - RFoot
+  - LTIbiba
+  - LFoot
   - Teleport
