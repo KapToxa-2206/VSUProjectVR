@@ -22,8 +22,8 @@ MonoBehaviour:
   - Liver
   - Bladder
   - MyNothing
-  - Organs
-  - Bones
+  - NoIteraction
+  - 
   - RClavicle
   - RScapula
   - RHumerus

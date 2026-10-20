@@ -18,8 +18,8 @@ public class LatinTextController : MonoBehaviour
 
     private void Start() {
         if(placementButton != null) {
+            isVisible = false;
             placementButton.onClick.AddListener(Activate);
-            isVisible = true;
         }
         for(int i = 0; i < objectLists.organs.Count; i++) {
             objectLists.organs[i].hoverEntered.AddListener(HoverEntered);
