@@ -40,8 +40,8 @@ MonoBehaviour:
   - Chest
   - Spine
   - Hip
-  - RTibia
+  - Tibias
   - RFoot
-  - LTIbiba
+  - Femurs
   - LFoot
   - Teleport
