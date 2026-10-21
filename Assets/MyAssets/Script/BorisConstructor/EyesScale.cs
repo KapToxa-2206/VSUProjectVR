@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.XR.Interaction.Toolkit;
+using System.Linq;
 
 public class EyesScale : MonoBehaviour
 {
@@ -25,12 +26,14 @@ public class EyesScale : MonoBehaviour
 
     private void OnSelectEnter(SelectEnterEventArgs args)
     {
-        XRGrabInteractable interactable = args.interactable.GetComponent<XRGrabInteractable>();
-        XRSocketInteractor socketInteractor = args.interactor.GetComponent<XRSocketInteractor>();
-        for(int i = 0; i < objectLists.organs.Count; i++) {
-            if(interactable.gameObject == objectLists.organs[i].gameObject) {
-                socketInteractor.fixedScale =  new Vector3(1, 1, 1) * scaleMultiplier[i];
-                break;
+        if(scaleMultiplier.Count != 0) {
+            XRGrabInteractable interactable = args.interactable.GetComponent<XRGrabInteractable>();
+            XRSocketInteractor socketInteractor = args.interactor.GetComponent<XRSocketInteractor>();
+            for(int i = 0; i < objectLists.organs.Count; i++) {
+                if(interactable.gameObject == objectLists.organs[i].gameObject) {
+                    socketInteractor.fixedScale =  new Vector3(1, 1, 1) * scaleMultiplier[i];
+                    break;
+                }
             }
         }
     }
