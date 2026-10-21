@@ -26154,6 +26154,8 @@ MonoBehaviour:
   objectLists: {fileID: 664732661}
   leftController: {fileID: 801660843}
   rightController: {fileID: 1997872918}
+  showButtons: []
+  hideButtons: []
 --- !u!114 &1353453330
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26177,6 +26179,10 @@ MonoBehaviour:
   objectLists: {fileID: 1109354824}
   leftController: {fileID: 801660843}
   rightController: {fileID: 1997872918}
+  showButtons:
+  - {fileID: 1236822540}
+  hideButtons:
+  - {fileID: 981964612}
 --- !u!4 &1353453331
 Transform:
   m_ObjectHideFlags: 0

@@ -21,6 +21,10 @@ public class OrganVisibilityToggle : MonoBehaviour
     public XRBaseInteractor leftController;          // Левый контроллер
     public XRBaseInteractor rightController;         // Правый контроллер
 
+    [Header("Кнопки состояний")]
+    public Button[] showButtons;                     // Нажатие показывает органы (Opaque)
+    public Button[] hideButtons;                     // Нажатие скрывает органы (Transparent + Additive)
+
     private bool isTransparent = false;              // Текущее состояние
     private int originalLeftLayers;                  // Исходная маска левого контроллера
     private int originalRightLayers;                 // Исходная маска правого контроллера
@@ -29,12 +33,48 @@ public class OrganVisibilityToggle : MonoBehaviour
     {
         if (button != null)
             button.onClick.AddListener(Toggle);
+
+        if (showButtons != null)
+            foreach (Button showButton in showButtons)
+                if (showButton != null)
+                    showButton.onClick.AddListener(Show);
+
+        if (hideButtons != null)
+            foreach (Button hideButton in hideButtons)
+                if (hideButton != null)
+                    hideButton.onClick.AddListener(Hide);
     }
 
     private void OnDisable()
     {
         if (button != null)
             button.onClick.RemoveListener(Toggle);
+
+        if (showButtons != null)
+            foreach (Button showButton in showButtons)
+                if (showButton != null)
+                    showButton.onClick.RemoveListener(Show);
+
+        if (hideButtons != null)
+            foreach (Button hideButton in hideButtons)
+                if (hideButton != null)
+                    hideButton.onClick.RemoveListener(Hide);
+    }
+
+    /// <summary>
+    /// Показать органы: Opaque, исходные маски контроллеров, текст "Скрыть".
+    /// </summary>
+    public void Show()
+    {
+        ShowOpaque();
+    }
+
+    /// <summary>
+    /// Скрыть органы: Transparent + Additive, слои удалены из масок контроллеров, текст "Показать".
+    /// </summary>
+    public void Hide()
+    {
+        ShowTransparent();
     }
 
     /// <summary>
