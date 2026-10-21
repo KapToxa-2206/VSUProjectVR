@@ -11873,7 +11873,7 @@ MonoBehaviour:
     - {fileID: 2100000, guid: 3a835045925f0564eb60a29014674547, type: 2}
   - materials:
     - {fileID: 2100000, guid: 8e8501b9673772940833dd31d04a6cc2, type: 2}
-  greenTexture: {fileID: 2800000, guid: 0c1dc8b37680e9243ac36f78d9ba102b, type: 3}
+  greenTexture: {fileID: 2800000, guid: 313b0a527fbf8804993b99502cbeda80, type: 3}
   redTexture: {fileID: 2800000, guid: 8809b2d57961fad45ae88a787b97624a, type: 3}
 --- !u!1 &597196766
 GameObject:
@@ -14155,14 +14155,14 @@ MonoBehaviour:
   - {fileID: 332115678}
   - {fileID: 882745944}
   layerMasks:
-  - m_Bits: 640
-  - m_Bits: 514
-  - m_Bits: 516
-  - m_Bits: 516
-  - m_Bits: 520
-  - m_Bits: 576
-  - m_Bits: 528
-  - m_Bits: 544
+  - m_Bits: 128
+  - m_Bits: 2
+  - m_Bits: 4
+  - m_Bits: 4
+  - m_Bits: 8
+  - m_Bits: 64
+  - m_Bits: 16
+  - m_Bits: 32
 --- !u!4 &664732662
 Transform:
   m_ObjectHideFlags: 0
@@ -31978,7 +31978,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1684230611}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

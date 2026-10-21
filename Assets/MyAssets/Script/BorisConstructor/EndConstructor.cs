@@ -57,6 +57,7 @@ public class EndConstructor : MonoBehaviour
 
 	            if (target != null)
         	    {
+                    target.interactionLayers = objectLists.layerMasks[i];
         		    target.transform.position = mainSockets[i].transform.position; // Устанавливаем позицию объекта на позицию сокета
 	                target.transform.rotation = mainSockets[i].transform.rotation; // Устанавливаем поворот объекта в соответствии с поворотом сокета
 

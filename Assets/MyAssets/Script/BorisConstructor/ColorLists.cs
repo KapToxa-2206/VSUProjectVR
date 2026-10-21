@@ -37,8 +37,9 @@ public class ColorLists : MonoBehaviour
 
     private void SetBaseMap(Material material, Texture texture)
     {
-        if(material == null || texture == null) return;
+        if(material == null) return;
 
+        // texture может быть null - это означает, что изначально Base Map был None
         if(material.HasProperty(BaseMapID)) material.SetTexture(BaseMapID, texture);
         else if(material.HasProperty(MainTexID)) material.SetTexture(MainTexID, texture);
     }
@@ -49,6 +50,7 @@ public class ColorLists : MonoBehaviour
         if(index < 0 || index >= organMaterials.Count) return;
 
         Texture2D texture = correct ? greenTexture : redTexture;
+        if(texture == null) return;
         List<Material> materials = organMaterials[index].materials;
         for(int j = 0; j < materials.Count; j++) {
             SetBaseMap(materials[j], texture);
