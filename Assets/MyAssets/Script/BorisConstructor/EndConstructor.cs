@@ -14,58 +14,68 @@ public class EndConstructor : MonoBehaviour
 
     private void Start()
     {
-        placementButton.onClick.AddListener(PlaceObject); // Добавляем слушатель для события "onClick" кнопки   
+        if (placementButton != null)
+            placementButton.onClick.AddListener(PlaceObject); // Добавляем слушатель для события "onClick" кнопки    
     }
 
-    private System.Collections.IEnumerator DelayedExecution()
-    {
-        yield return new WaitForSecondsRealtime(0.001f);
-        for(int i = 0; i < objectLists.mainSockets.Count; i++) {
-             objectLists.mainSockets[i].socketActive = true;
-        }
-        platformSocket.socketActive = true;
-    }
-
+    /// <summary>
+    /// Выход из конструктора: органы возвращаются в основные сокеты,
+    /// маски слоёв восстанавливаются, счётчик сбрасывается.
+    /// Перемещение выполняется синхронно через API XR Interaction Toolkit,
+    /// поэтому отложенного выполнения здесь не требуется.
+    /// </summary>
     private void PlaceObject()
     {
+        if (objectLists == null)
+            return;
+
+        // Объект, положенный на платформу, освобождаем и оставляем в мире.
+        OrganTransfer.ReleaseAndDetach(platformSocket);
+        if (platformSocket != null)
+            platformSocket.socketActive = true;
+
         List<XRSocketInteractor> mainSockets = objectLists.mainSockets;
         List<XRGrabInteractable> organs = objectLists.organs;
-	    if (platformSocket != null && platformSocket.selectTarget is XRBaseInteractable) // Проверяем, выбран ли объект в сокете
+        List<InteractionLayerMask> layerMasks = objectLists.layerMasks;
+
+        if (mainSockets == null || organs == null)
+            return;
+
+        int count = Mathf.Min(mainSockets.Count, organs.Count);
+
+        // Восстанавливаем маски слоёв: в каждом сокете должен помещаться только свой орган.
+        for (int i = 0; i < mainSockets.Count; i++)
         {
-            XRBaseInteractable target = (XRBaseInteractable)platformSocket.selectTarget; // Получаем ссылку на XRBaseInteractable
+            if (mainSockets[i] == null)
+                continue;
 
-	        // Удаляем объект из сокета
-            platformSocket.socketActive = false;
-            target.transform.SetParent(null);
-	    }
+            mainSockets[i].socketActive = true;
 
-        for(int i = 0; i < mainSockets.Count; i++) {
-            if(mainSockets[i] != null && mainSockets[i].selectTarget is XRBaseInteractable) {
-                XRBaseInteractable target = (XRBaseInteractable)mainSockets[i].selectTarget;
-
-                mainSockets[i].socketActive = false;
-                target.transform.SetParent(null);
-            }
-            mainSockets[i].interactionLayers = objectLists.layerMasks[i];
+            if (layerMasks != null && i < layerMasks.Count)
+                mainSockets[i].interactionLayers = layerMasks[i];
         }
-        colorLists.RestoreAll(); // Возвращаем органам изначальный вид
 
-		for(int i = 0; i < mainSockets.Count; i++) {
-        	if (mainSockets[i] != null && organs[i] != null)
-        	{
-	            XRBaseInteractable target = organs[i] as XRBaseInteractable; // Приводим XRGrabInteractable к типу XRBaseInteractable
+        if (colorLists != null)
+            colorLists.RestoreAll(); // Возвращаем органам изначальный вид
 
-	            if (target != null)
-        	    {
-                    target.interactionLayers = objectLists.layerMasks[i];
-        		    target.transform.position = mainSockets[i].transform.position; // Устанавливаем позицию объекта на позицию сокета
-	                target.transform.rotation = mainSockets[i].transform.rotation; // Устанавливаем поворот объекта в соответствии с поворотом сокета
+        // Освобождаем сокеты заранее: освобождение и новый захват должны пройти
+        // в одном кадре, иначе орган на мгновение станет динамическим и упадёт.
+        OrganTransfer.ReleaseAll(mainSockets);
 
-                	target.transform.SetParent(mainSockets[i].transform); // Устанавливаем родителя объекта в сокет XR Socket
-				}
-        	}
+        for (int i = 0; i < count; i++)
+        {
+            if (mainSockets[i] == null || organs[i] == null)
+                continue;
+
+            // Маска органа должна совпадать с маской сокета, иначе XRI
+            // освободит орган уже на следующем кадре.
+            if (layerMasks != null && i < layerMasks.Count)
+                organs[i].interactionLayers = layerMasks[i];
+
+            OrganTransfer.MoveToSocket(organs[i], mainSockets[i]);
         }
-        textMeshPro.text = "0 из " + objectLists.mainSockets.Count.ToString("D1");
-        StartCoroutine(DelayedExecution()); 
+
+        if (textMeshPro != null)
+            textMeshPro.text = "0 из " + mainSockets.Count.ToString("D1");
     }
 }

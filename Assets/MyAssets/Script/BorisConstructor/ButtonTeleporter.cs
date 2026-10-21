@@ -17,42 +17,64 @@ public class ButtonTeleporter : MonoBehaviour
         }  
     }
 
-    private System.Collections.IEnumerator DelayedExecution()
-    {
-        yield return new WaitForSecondsRealtime(0.001f);
-        for(int i = 0; i < objectLists.mainSockets.Count; i++) {
-             objectLists.mainSockets[i].socketActive = true;
-        }
-        platformSocket.socketActive = true;
-    }
-
+    /// <summary>
+    /// Старт конструктора: органы переезжают из основных сокетов в телепорт-сокеты.
+    /// Перемещение выполняется синхронно через API XR Interaction Toolkit,
+    /// поэтому отложенного выполнения здесь не требуется.
+    /// </summary>
     public void TeleportObject()
     {
-        if (platformSocket != null && platformSocket.selectTarget is XRBaseInteractable) // Проверяем, выбран ли объект в сокете
-        {
-            XRBaseInteractable target = (XRBaseInteractable)platformSocket.selectTarget; // Получаем ссылку на XRBaseInteractable
+        if (objectLists == null)
+            return;
 
-	        // Удаляем объект из сокета
-            platformSocket.socketActive = false;
-	    }
+        // Объект, положенный на платформу, освобождаем и оставляем в мире.
+        OrganTransfer.ReleaseAndDetach(platformSocket);
+        if (platformSocket != null)
+            platformSocket.socketActive = true;
 
         List<XRSocketInteractor> mainSockets = objectLists.mainSockets;
-        for(int i = 0; i < mainSockets.Count; i++) 
+        List<XRSocketInteractor> teleportSockets = objectLists.teleportSockets;
+        List<XRGrabInteractable> organs = objectLists.organs;
+
+        // Все сокеты должны быть активны: иначе XRI освободит organ уже на следующем кадре.
+        if (mainSockets != null)
         {
-            XRBaseInteractable target = objectLists.organs[i] as XRBaseInteractable;  // Получаем ссылку на XRBaseInteractable
-            List<XRSocketInteractor> teleportSockets = objectLists.teleportSockets;
-            if (mainSockets[i] != null && mainSockets[i].selectTarget is XRBaseInteractable) // Проверяем, выбран ли объект в сокете
+            for (int i = 0; i < mainSockets.Count; i++)
             {
-	            // Удаляем объект из сокета
-                mainSockets[i].socketActive = false;
-	        }
-            mainSockets[i].interactionLayers = everythingMask;
+                if (mainSockets[i] == null)
+                    continue;
 
-            target.transform.position = teleportSockets[i].transform.position;
-            target.transform.rotation = teleportSockets[i].transform.rotation;
-
+                mainSockets[i].socketActive = true;
+                // В режиме конструктора любой орган можно положить в любой сокет.
+                mainSockets[i].interactionLayers = everythingMask;
+            }
         }
-        StartCoroutine(DelayedExecution());
+
+        if (teleportSockets != null)
+        {
+            for (int i = 0; i < teleportSockets.Count; i++)
+            {
+                if (teleportSockets[i] != null)
+                    teleportSockets[i].socketActive = true;
+            }
+        }
+
+        if (mainSockets == null || teleportSockets == null || organs == null)
+            return;
+
+        // Освобождаем сокеты заранее: освобождение и новый захват должны пройти
+        // в одном кадре, иначе орган на мгновение станет динамическим и упадёт.
+        OrganTransfer.ReleaseAll(mainSockets);
+        OrganTransfer.ReleaseAll(teleportSockets);
+
+        int count = Mathf.Min(teleportSockets.Count, organs.Count);
+        for (int i = 0; i < count; i++)
+        {
+            if (teleportSockets[i] == null || organs[i] == null)
+                continue;
+
+            OrganTransfer.MoveToSocket(organs[i], teleportSockets[i]);
+        }
     }
 }
 

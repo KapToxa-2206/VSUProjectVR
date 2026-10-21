@@ -11,6 +11,7 @@ public class BeginAgain : MonoBehaviour
     public ObjectLists objectLists;
     public ColorLists colorLists;
     public TextMeshProUGUI textMeshPro;
+    public InteractionLayerMask everythingMask;
     // public XRController leftController;
     // public XRController rightController;
 
@@ -21,88 +22,71 @@ public class BeginAgain : MonoBehaviour
         }  
     }
 
-    private System.Collections.IEnumerator DelayedExecution()
-    {
-        yield return new WaitForSecondsRealtime(0.001f);
-        for(int i = 0; i < objectLists.mainSockets.Count; i++) {
-            objectLists.mainSockets[i].socketActive = true;
-            objectLists.teleportSockets[i].socketActive = true;
-        }
-        platformSocket.socketActive = true;
-        // leftController.socketActive = true;
-        // rightController.socketActive = true;
-    }
-
-    private System.Collections.IEnumerator DelayedExecutionTeleport()
-    {
-        yield return new WaitForSecondsRealtime(0.001f);
-        for(int i = 0; i < objectLists.mainSockets.Count; i++) {
-            objectLists.teleportSockets[i].socketActive = true;
-        }
-    }
-
+    /// <summary>
+    /// Перезапуск игры: органы возвращаются в телепорт-сокеты,
+    /// счётчик сбрасывается, органы получают изначальный вид.
+    /// Перемещение выполняется синхронно через API XR Interaction Toolkit,
+    /// поэтому отложенного выполнения здесь не требуется.
+    /// </summary>
     public void TeleportObject()
     {
-        if (platformSocket != null && platformSocket.selectTarget is XRBaseInteractable) // Проверяем, выбран ли объект в сокете
-        {
-            XRBaseInteractable target = (XRBaseInteractable)platformSocket.selectTarget; // Получаем ссылку на XRBaseInteractable
+        if (objectLists == null)
+            return;
 
-	        // Удаляем объект из сокета
-            platformSocket.socketActive = false;
-            target.transform.SetParent(null);
-	    }
-
-        // if(leftController != null && leftController.selectTarget is XRBaseInteractable) {
-        //     XRBaseInteractable target = (XRBaseInteractable)leftController.selectTarget; // Получаем ссылку на XRBaseInteractable
-
-	    //     // Удаляем объект из сокета
-        //     leftController.socketActive = false;
-        //     target.transform.SetParent(null);
-        // }
-
-        // if(rightController != null && rightController.selectTarget is XRBaseInteractable) {
-        //     XRBaseInteractable target = (XRBaseInteractable)rightController.selectTarget; // Получаем ссылку на XRBaseInteractable
-
-	    //     // Удаляем объект из сокета
-        //     rightController.socketActive = false;
-        //     target.transform.SetParent(null);
-        // }
+        // Объект, положенный на платформу, освобождаем и оставляем в мире.
+        OrganTransfer.ReleaseAndDetach(platformSocket);
+        if (platformSocket != null)
+            platformSocket.socketActive = true;
 
         List<XRSocketInteractor> mainSockets = objectLists.mainSockets;
         List<XRSocketInteractor> teleportSockets = objectLists.teleportSockets;
+        List<XRGrabInteractable> organs = objectLists.organs;
 
-        for(int i = 0; i < mainSockets.Count; i++) {
-            if (mainSockets[i] != null && mainSockets[i].selectTarget is XRBaseInteractable) // Проверяем, выбран ли объект в сокете
-            {
-                XRBaseInteractable target = (XRBaseInteractable)mainSockets[i].selectTarget;
-	            // Удаляем объект из сокета
-                mainSockets[i].socketActive = false;
-                //target.transform.SetParent(null);
-	        }
-        }
-
-        for(int i = 0; i < teleportSockets.Count; i++) {
-            if (teleportSockets[i] != null && teleportSockets[i].selectTarget is XRBaseInteractable) // Проверяем, выбран ли объект в сокете
-            {
-                XRBaseInteractable target = (XRBaseInteractable)teleportSockets[i].selectTarget;
-	            // Удаляем объект из сокета
-                teleportSockets[i].socketActive = false;
-                //target.transform.SetParent(null);
-	        }
-        }
-        
-        for(int i = 0; i < teleportSockets.Count; i++) 
+        // Все сокеты должны быть активны: иначе XRI освободит орган уже на следующем кадре.
+        if (mainSockets != null)
         {
-            XRBaseInteractable target = objectLists.organs[i] as XRBaseInteractable;  // Получаем ссылку на XRBaseInteractable
-            colorLists.RestoreOrgan(i); // Возвращаем изначальный вид органа
+            for (int i = 0; i < mainSockets.Count; i++)
+            {
+                if (mainSockets[i] == null)
+                    continue;
 
-            if(target != null) {
-                target.transform.position = teleportSockets[i].transform.position;
-                target.transform.rotation = teleportSockets[i].transform.rotation;
-                //target.transform.SetParent(teleportSockets[i].transform);
+                mainSockets[i].socketActive = true;
+                // После перезапуска состояние должно совпадать с началом игры:
+                // в режиме конструктора любой орган можно положить в любой сокет.
+                mainSockets[i].interactionLayers = everythingMask;
             }
         }
-        textMeshPro.text = "0 из " + objectLists.mainSockets.Count.ToString("D1");
-        StartCoroutine(DelayedExecution());
+
+        if (teleportSockets != null)
+        {
+            for (int i = 0; i < teleportSockets.Count; i++)
+            {
+                if (teleportSockets[i] != null)
+                    teleportSockets[i].socketActive = true;
+            }
+        }
+
+        if (colorLists != null)
+            colorLists.RestoreAll(); // Возвращаем органам изначальный вид
+
+        if (mainSockets == null || teleportSockets == null || organs == null)
+            return;
+
+        // Освобождаем сокеты заранее: освобождение и новый захват должны пройти
+        // в одном кадре, иначе орган на мгновение станет динамическим и упадёт.
+        OrganTransfer.ReleaseAll(mainSockets);
+        OrganTransfer.ReleaseAll(teleportSockets);
+
+        int count = Mathf.Min(teleportSockets.Count, organs.Count);
+        for (int i = 0; i < count; i++)
+        {
+            if (teleportSockets[i] == null || organs[i] == null)
+                continue;
+
+            OrganTransfer.MoveToSocket(organs[i], teleportSockets[i]);
+        }
+
+        if (textMeshPro != null)
+            textMeshPro.text = "0 из " + mainSockets.Count.ToString("D1");
     }
 }
