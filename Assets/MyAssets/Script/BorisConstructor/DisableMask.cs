@@ -49,12 +49,7 @@ public class DisableMask : MonoBehaviour
             for(int i = 0; i < objectLists.organs.Count; i++) {
                 if (grabInteractable == objectLists.organs[i])
                 {
-                    if (colorLists.redOrgans[i].activeSelf) {
-                        colorLists.redOrgans[i].SetActive(false);
-                    }
-                    if (colorLists.greenOrgans[i].activeSelf) {
-                        colorLists.greenOrgans[i].SetActive(false);
-                    }
+                    colorLists.RestoreOrgan(i); // При перемещении органа возвращаем ему изначальный вид
                 }
             }
         }

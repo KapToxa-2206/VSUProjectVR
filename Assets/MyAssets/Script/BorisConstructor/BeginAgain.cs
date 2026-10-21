@@ -94,8 +94,7 @@ public class BeginAgain : MonoBehaviour
         for(int i = 0; i < teleportSockets.Count; i++) 
         {
             XRBaseInteractable target = objectLists.organs[i] as XRBaseInteractable;  // Получаем ссылку на XRBaseInteractable
-            colorLists.redOrgans[i].SetActive(false);
-            colorLists.greenOrgans[i].SetActive(false);
+            colorLists.RestoreOrgan(i); // Возвращаем изначальный вид органа
 
             if(target != null) {
                 target.transform.position = teleportSockets[i].transform.position;

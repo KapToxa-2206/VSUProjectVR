@@ -47,9 +47,8 @@ public class EndConstructor : MonoBehaviour
                 target.transform.SetParent(null);
             }
             mainSockets[i].interactionLayers = objectLists.layerMasks[i];
-            colorLists.redOrgans[i].SetActive(false);
-            colorLists.greenOrgans[i].SetActive(false);
         }
+        colorLists.RestoreAll(); // Возвращаем органам изначальный вид
 
 		for(int i = 0; i < mainSockets.Count; i++) {
         	if (mainSockets[i] != null && organs[i] != null)

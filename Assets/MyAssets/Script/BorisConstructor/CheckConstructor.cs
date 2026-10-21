@@ -24,6 +24,7 @@ public class CheckConstructor : MonoBehaviour
     public void TeleportObject()
     {
         int result = 0;
+        colorLists.RestoreAll(); // Убираем старую подсветку перед новой проверкой
         List<XRSocketInteractor> mainSockets = objectLists.mainSockets;
         for(int i = 0; i < mainSockets.Count; i++) 
         {
@@ -32,18 +33,13 @@ public class CheckConstructor : MonoBehaviour
                 XRBaseInteractable targetCurrent = (XRBaseInteractable)mainSockets[i].selectTarget; // Получаем ссылку на XRBaseInteractable
 
                 if(targetNeeded == targetCurrent || (targetNeeded == leftEye && targetCurrent == rightEye) || (targetNeeded == rightEye && targetCurrent == leftEye)) {
-                    colorLists.greenOrgans[i].SetActive(true);
-                    colorLists.greenOrgans[i].transform.position = targetNeeded.transform.position; 
-                    colorLists.greenOrgans[i].transform.rotation = targetNeeded.transform.rotation;
+                    colorLists.SetOrganColor(i, true); // Правильный орган - зеленый
                     //Debug.Log("set green for " + targetCurrent.name);
                     result++;
                 } else {
-                    List<GameObject> redOrgans = colorLists.redOrgans;
-                    for(int j = 0; j < redOrgans.Count; j++) {
+                    for(int j = 0; j < objectLists.organs.Count; j++) {
                         if(targetCurrent == objectLists.organs[j]) {
-                            redOrgans[j].transform.position = targetCurrent.transform.position; 
-                            redOrgans[j].transform.rotation = targetCurrent.transform.rotation;
-                            redOrgans[j].SetActive(true);
+                            colorLists.SetOrganColor(j, false); // Неправильный орган - красный
                             break;
                         }
                     }
