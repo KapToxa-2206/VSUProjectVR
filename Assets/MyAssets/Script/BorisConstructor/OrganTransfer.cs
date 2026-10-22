@@ -13,7 +13,7 @@ using UnityEngine.XR.Interaction.Toolkit;
 ///
 /// Как устроено перемещение здесь:
 ///  1) Release  - синхронное освобождение объекта через XRInteractionManager.SelectExit;
-///  2) перенос   - объект ставится в позу attach-точки целевого сокета;
+///  2) перенос   - объект ставится ровно в ту позу, в которую его "защёлкнул" бы сокет;
 ///  3) Grab     - синхронная передача объекта сокету через XRInteractionManager.SelectEnter.
 ///
 /// Освобождение и новый захват происходят в одном кадре, поэтому XRGrabInteractable
@@ -53,16 +53,75 @@ public static class OrganTransfer
         // неправильного родителя и вернёт объект не туда.
         ReleaseFromAll(interactable);
 
-        // Переносим объект в позу attach-точки сокета. Именно её XRI использует
-        // при фиксации объекта в сокете, поэтому результат совпадает с тем,
-        // как объект выглядит в сокете при запуске игры.
-        Transform attach = targetSocket.attachTransform != null ? targetSocket.attachTransform : targetSocket.transform;
-        interactable.transform.SetPositionAndRotation(attach.position, attach.rotation);
+        // Отцепляем объект от родителя, сохраняя мировое положение, поворот и масштаб.
+        // XRI делает то же самое при захвате (XRGrabInteractable.Grab -> SetParent(null)),
+        // но уже после того, как объект получил новую позу. Делаем это заранее, чтобы
+        // локальный масштаб объекта не зависел от масштаба родителя: у костей родитель -
+        // узел "Skeleton" с масштабом 0.000989, поэтому после отцепления локальный
+        // масштаб кости меняется с 1 на 0.000989. Если объект оставить вложенным,
+        // любой код, работающий с локальным масштабом, "раздует" кость в тысячу раз.
+        DetachPreservingWorldTransform(interactable.transform);
+
+        // Переносим объект в позу, в которую его "защёлкивает" сокет.
+        // Именно её XRI использует при фиксации объекта в сокете, поэтому результат
+        // совпадает с тем, как объект выглядит в сокете при запуске игры.
+        GetSocketSnapPose(targetSocket, interactable, out Vector3 position, out Quaternion rotation);
+        interactable.transform.SetPositionAndRotation(position, rotation);
 
         // Отдаём объект сокету в этом же кадре.
         Grab(targetSocket, interactable);
 
         return interactable.isSelected;
+    }
+
+    /// <summary>
+    /// Вычисляет мировую позу, в которую сокет XR Interaction Toolkit "защёлкивает" объект.
+    ///
+    /// Формула полностью повторяет XRSocketGrabTransformer.GetTargetPoseForInteractable:
+    ///   positionOffset  = attachTransform.InverseTransformDirection(objPos - attachPos)
+    ///   targetPos       = socketRot * positionOffset + socketPos
+    ///   rotationOffset  = Inverse(Inverse(objRot) * attachRot)
+    ///   targetRot       = socketRot * rotationOffset
+    ///
+    /// Зачем это нужно:
+    ///  XRI размещает в сокете не сам объект, а его attach-точку (m_AttachTransform).
+    ///  У костей скелета attach-точка сильно смещена относительно начала координат модели
+    ///  (у черепа - на 1.7 м), поэтому "начало координат объекта" в сокет встать не может.
+    ///  Кроме того, XRI "защёлкивает" объект только если тот находится в радиусе
+    ///  m_SocketSnappingRadius от целевой точки (у основных сокетов - 0.1 м).
+    ///  Если поставить объект началом координат в точку сокета, проверка радиуса не
+    ///  пройдёт, и объект останется в неверном месте (именно так и возвращались кости).
+    ///  Если считать позу напрямую, результат не зависит от радиуса и всегда совпадает
+    ///  с тем, что сделал бы сам XR Interaction Toolkit.
+    /// </summary>
+    /// <param name="socket">Сокет, в который защёлкивается объект.</param>
+    /// <param name="interactable">Объект, который защёлкивается.</param>
+    /// <param name="position">Мировая позиция объекта в сокете.</param>
+    /// <param name="rotation">Мировой поворот объекта в сокете.</param>
+    static void GetSocketSnapPose(XRSocketInteractor socket, XRBaseInteractable interactable, out Vector3 position, out Quaternion rotation)
+    {
+        // Attach-точка сокета (если не задана - сам сокет).
+        Transform socketAttach = socket.attachTransform != null ? socket.attachTransform : socket.transform;
+
+        Transform objectTransform = interactable.transform;
+
+        // Attach-точка объекта. Важно: считать её нужно, пока объект ещё никем
+        // не выбран - тогда XRI возвращает статическую m_AttachTransform, а не
+        // динамическую (она создаётся только при захвате).
+        Transform objectAttach = interactable.GetAttachTransform(socket);
+        if (objectAttach == null)
+            objectAttach = objectTransform;
+
+        // Смещение начала координат объекта относительно его attach-точки,
+        // переведённое в локальные координаты attach-точки.
+        Vector3 attachOffset = objectTransform.position - objectAttach.position;
+        Vector3 positionOffset = objectAttach.InverseTransformDirection(attachOffset);
+
+        // Поворот сохраняет взаимное положение объекта и его attach-точки.
+        Quaternion rotationOffset = Quaternion.Inverse(Quaternion.Inverse(objectTransform.rotation) * objectAttach.rotation);
+
+        position = socketAttach.rotation * positionOffset + socketAttach.position;
+        rotation = socketAttach.rotation * rotationOffset;
     }
 
     /// <summary>
@@ -129,6 +188,28 @@ public static class OrganTransfer
 
             Release(copy[i], interactable);
         }
+    }
+
+    /// <summary>
+    /// Отцепляет объект от родителя, сохраняя мировое положение, поворот и масштаб.
+    ///
+    /// Зачем это нужно:
+    ///  Локальный масштаб объекта зависит от масштаба родителя. При отцеплении
+    ///  Unity пересчитывает локальный масштаб так, чтобы мировой остался прежним
+    ///  (у костей родитель - узел "Skeleton" с масштабом 0.000989, поэтому локальный
+    ///  масштаб кости меняется с 1 на 0.000989). Если после этого кто-то запишет
+    ///  старый локальный масштаб (1), объект станет примерно в тысячу раз больше:
+    ///  камера окажется внутри меша (модель не видна) и луч контроллера не будет
+    ///  попадать в коллайдер, внутри которого он находится (нет взаимодействия).
+    /// </summary>
+    /// <param name="target">Объект, который нужно отцепить от родителя.</param>
+    static void DetachPreservingWorldTransform(Transform target)
+    {
+        if (target == null || target.parent == null)
+            return;
+
+        // worldPositionStays = true: мировое положение, поворот и масштаб сохраняются.
+        target.SetParent(null, true);
     }
 
     /// <summary>
