@@ -26,9 +26,12 @@ using System.Collections.Generic;
 ///
 /// Теперь маски слоёв не меняются вообще, а запрет Hover сделан штатным механизмом XRI -
 /// hover-фильтром сокета (IXRHoverFilter). Фильтр разрешает Hover органа только если этот
-/// орган не удерживается другим сокетом из списка. Благодаря этому:
+/// орган не удерживается другим сокетом из списка, а занятый сокет вообще не подсвечивает
+/// посторонние органы (из-за этого у него раньше появлялся красный Hover "Can't Hover").
+/// Благодаря этому:
 ///  - свободный орган по-прежнему подсвечивается у любого сокета (маска общая);
 ///  - установленный орган не подсвечивается у соседних сокетов;
+///  - сокет, в котором уже лежит орган, не подсвечивает другие органы;
 ///  - сокет не теряет выбор, орган остаётся кинематическим и не выталкивается;
 ///  - контроллеры могут взять установленный орган (бит органа есть в маске контроллеров).
 /// </summary>
@@ -86,15 +89,22 @@ public class DisableMask : MonoBehaviour
     }
 
     /// <summary>
-    /// Hover-фильтр сокета: установленный в другом сокете орган подсвечивать нельзя.
+    /// Hover-фильтр сокета: занятый сокет не подсвечивает ничего, а установленный
+    /// в другом сокете орган нельзя подсветить соседними сокетами.
     /// </summary>
     /// <param name="interactor">Сокет, который спрашивает разрешение на Hover.</param>
     /// <param name="interactable">Орган, который сокет хочет подсветить.</param>
-    /// <returns>false, если орган уже удерживается другим сокетом.</returns>
+    /// <returns>false, если сокет занят или орган уже удерживается другим сокетом.</returns>
     private bool CanHoverOrgan(IXRHoverInteractor interactor, IXRHoverInteractable interactable)
     {
         if (!(interactable is IXRSelectInteractable selectInteractable))
             return true;
+
+        // В сокете уже лежит орган: подсвечивать что-либо ещё нельзя, иначе XRI
+        // рисует у сокета красный Hover (Can't Hover). Свой собственный орган
+        // подсвечивать разрешаем - иначе XRI снимет socket snapping (EndSocketSnapping).
+        if (interactor is IXRSelectInteractor selectInteractor && selectInteractor.hasSelection)
+            return selectInteractor.IsSelecting(selectInteractable);
 
         List<IXRSelectInteractor> selecting = selectInteractable.interactorsSelecting;
         for (int i = 0; i < selecting.Count; i++)

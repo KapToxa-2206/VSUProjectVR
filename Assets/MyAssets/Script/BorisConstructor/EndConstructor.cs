@@ -44,6 +44,11 @@ public class EndConstructor : MonoBehaviour
         int count = Mathf.Min(mainSockets.Count, organs.Count);
 
         // Восстанавливаем маски слоёв: в каждом сокете должен помещаться только свой орган.
+        // Сокету возвращаем ЕГО изначальную маску, а не layerMasks[i]: layerMasks - это
+        // маски органов, и в них есть общий для всех органов слой (у костей - бит 10),
+        // по которому контроллер берёт орган в руку. Если записать эту маску сокетам,
+        // общий слой окажется у всех сокетов сразу, и тогда любую кость можно будет
+        // положить в любой сокет (именно так и ломались кости).
         for (int i = 0; i < mainSockets.Count; i++)
         {
             if (mainSockets[i] == null)
@@ -51,7 +56,9 @@ public class EndConstructor : MonoBehaviour
 
             mainSockets[i].socketActive = true;
 
-            if (layerMasks != null && i < layerMasks.Count)
+            if (objectLists.TryGetInitialSocketMask(i, out InteractionLayerMask socketMask))
+                mainSockets[i].interactionLayers = socketMask;
+            else if (layerMasks != null && i < layerMasks.Count)
                 mainSockets[i].interactionLayers = layerMasks[i];
         }
 
@@ -69,7 +76,9 @@ public class EndConstructor : MonoBehaviour
 
             // Маска органа должна совпадать с маской сокета, иначе XRI
             // освободит орган уже на следующем кадре.
-            if (layerMasks != null && i < layerMasks.Count)
+            if (objectLists.TryGetInitialOrganMask(i, out InteractionLayerMask organMask))
+                organs[i].interactionLayers = organMask;
+            else if (layerMasks != null && i < layerMasks.Count)
                 organs[i].interactionLayers = layerMasks[i];
 
             OrganTransfer.MoveToSocket(organs[i], mainSockets[i]);
