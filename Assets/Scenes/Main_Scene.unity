@@ -1931,10 +1931,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   objectLists: {fileID: 664732661}
   scaleMultiplier:
-  - 2
+  - 2.5
   - 1.4
-  - 2
-  - 2
+  - 3
+  - 3
   - 1.7
   - 1.3
   - 1
@@ -7129,7 +7129,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2b1441ed55d8b14e8fddb6eda224b4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ambientVolume: 1
+  ambientVolume: 0
   effectsVolume: 0.5
 --- !u!4 &199895243
 Transform:
@@ -21958,12 +21958,12 @@ MonoBehaviour:
   - 1
   - 1
   - 1
+  - 2
   - 1
   - 1
   - 1
   - 1
-  - 1
-  - 1
+  - 2
   - 1
   - 1
   - 1
@@ -24965,7 +24965,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.000002861, y: 39.9}
+  m_AnchoredPosition: {x: 0, y: 39.9}
   m_SizeDelta: {x: 100, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &981964612
@@ -34925,6 +34925,7 @@ MonoBehaviour:
   rightController: {fileID: 1997872918}
   showButtons:
   - {fileID: 578223496}
+  - {fileID: 981964612}
   hideButtons:
   - {fileID: 608590006}
 --- !u!114 &1353453330
@@ -34972,6 +34973,7 @@ MonoBehaviour:
   rightController: {fileID: 1997872918}
   showButtons:
   - {fileID: 1236822540}
+  - {fileID: 608590006}
   hideButtons:
   - {fileID: 981964612}
 --- !u!4 &1353453331
